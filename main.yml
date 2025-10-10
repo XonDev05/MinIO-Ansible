@@ -1,0 +1,7 @@
+---
+- name: Minio in ansible
+  hosts: minio
+  become: true
+
+  roles:
+    - minio

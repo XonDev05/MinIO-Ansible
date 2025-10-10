@@ -1,0 +1,7 @@
+---
+mip: "localhost:9000"
+mc_alias: "minio"
+bucket: "ansible2"
+user: "ansible2"
+password: "MyStrongPass123"
+policy: "rw"

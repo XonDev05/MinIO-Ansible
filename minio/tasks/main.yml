@@ -1,0 +1,72 @@
+---
+- name: Include .env
+  include_vars:
+    file: "{{ role_path }}/files/.env"
+    name: env_vars
+
+- name: Access and secret keys
+  set_fact:
+    access_key: "{{ env_vars.MINIO_ACCESS_KEY }}"
+    secret_key: "{{ env_vars.MINIO_SECRET_KEY }}"
+
+- name: Check mc
+  ansible.builtin.shell: "command -v mc"
+  register: mc_check
+  ignore_errors: true
+
+- name: Download mc client
+  ansible.builtin.get_url:
+    url: "https://dl.min.io/client/mc/release/linux-amd64/mc"
+    dest: "/usr/local/bin/mc"
+    mode: '0755'
+  when: mc_check.rc != 0
+
+
+- name: Add MinIO alias
+  shell: >
+    mc alias set {{ mc_alias }}
+    http://{{ mip }} {{ access_key }} {{ secret_key }}
+
+- name: Create bucket
+  shell: >
+    mc mb {{ mc_alias }}/{{ bucket }} || true
+
+- name: Generate policy file 
+  set_fact:
+    policy_file: "/tmp/{{ bucket }}_{{ policy }}.json"
+    actions: >-
+      {% if policy == 'r' %}
+      ["s3:GetObject"]
+      {% elif policy == 'rw' %}
+      ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+      {% elif policy == 'rwd' %}
+      ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+      {% else %}
+      ["s3:GetObject"]
+      {% endif %}
+
+- name: Write policy JSON file
+  copy:
+    dest: "{{ policy_file }}"
+    content: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [{
+          "Effect": "Allow",
+          "Action": {{ actions }},
+          "Resource": ["arn:aws:s3:::{{ bucket }}/*", "arn:aws:s3:::{{ bucket }}"]
+        }]
+      }
+
+- name: Create policy in MinIO (ignore if exists)
+  shell: >
+    mc admin policy create {{ mc_alias }} {{ bucket }}_{{ policy }} {{ policy_file }}
+
+- name: Create or enable user
+  shell: >
+    mc admin user add {{ mc_alias }} {{ user }} {{ password }} || mc admin user enable {{ mc_alias }} {{ user }}
+
+- name: Attach policy to user
+  shell: >
+    mc admin policy attach {{ mc_alias }} --user {{ user }} {{ bucket }}_{{ policy }}
+
