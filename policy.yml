@@ -2,6 +2,6 @@
   vars:
     user_policies: "{{ (user.policy is string) | ternary([user.policy], user.policy) }}"
   include_tasks: policy_item.yml
-  loop: "{{ user.bucket }}"
+  loop: "{{ user_policies }}"
   loop_control:
-    loop_var: bucket_item
+    loop_var: policy_item

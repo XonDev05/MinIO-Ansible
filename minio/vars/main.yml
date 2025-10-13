@@ -3,12 +3,13 @@
 mip: "localhost:9000"
 mc_alias: "minio"
 
+
 user_groups:
   - group_name: dev-team
     users:
       - user: "Shoxrux"
         bucket:
-          - "ansible3" 
+          - "ansible3"
           - "shoxrux"
         password: "MyStrongPass123"
         policy: "r"

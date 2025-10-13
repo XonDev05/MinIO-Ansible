@@ -1,19 +1,20 @@
 - block:
-    - name: Set policy file and actions
+    - name: Set user policy file and actions
       set_fact:
-        policy_file: "/tmp/{{ bucket_item | lower }}_{{ policy_item | lower }}.json"
+        policy_file: "/tmp/{{ user.user | lower }}_policy_{{ policy_item | lower }}.json"
+        policy_name: "{{ user.user | lower }}_policy_{{ policy_item | lower }}"
         actions: >-
-          {% if policy_item == 'r' %}
+          {% if user.policy == 'r' %}
           ["s3:GetObject"]
-          {% elif policy_item == 'rw' %}
+          {% elif user.policy == 'rw' %}
           ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
-          {% elif policy_item == 'rwd' %}
+          {% elif user.policy == 'rwd' %}
           ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
           {% else %}
           ["s3:GetObject"]
           {% endif %}
 
-    - name: Write policy JSON file
+    - name: Write user-specific policy JSON
       copy:
         dest: "{{ policy_file }}"
         content: |
@@ -22,16 +23,22 @@
             "Statement": [ {
               "Effect": "Allow",
               "Action": {{ actions }},
-              "Resource": ["arn:aws:s3:::{{ bucket_item }}/*", "arn:aws:s3:::{{ bucket_item }}"]
+              "Resource": [
+                {% for b in user.bucket %}
+                  "arn:aws:s3:::{{ b }}/*",
+                  "arn:aws:s3:::{{ b }}"
+                  {% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
             } ]
           }
 
-    - name: Create policy in MinIO
+    - name: Create policy for {{ user.user }}
       ansible.builtin.shell: >
-        mc admin policy create {{ mc_alias }} {{ (bucket_item + '_' + policy_item) | lower }} {{ policy_file }}
+        mc admin policy create {{ mc_alias }} {{ policy_name }} {{ policy_file }}
       ignore_errors: true
 
-    - name: Attach policy to user {{ user.user }}
+    - name: Attach {{ policy_name }} to {{ user.user }}
       ansible.builtin.shell: >
-        mc admin policy attach {{ mc_alias }} --user {{ user.user }} {{ (bucket_item + '_' + policy_item) | lower }}
+        mc admin policy attach {{ mc_alias }} --user {{ user.user }} {{ policy_name }}
       ignore_errors: true
