@@ -1,7 +1,34 @@
 ---
+#global variables for minio role
 mip: "localhost:9000"
 mc_alias: "minio"
-bucket: "ansible2"
-user: "ansible2"
-password: "MyStrongPass123"
-policy: "rw"
+
+user_groups:
+  - group_name: dev-team
+    users:
+      - user: "Shoxrux"
+        bucket:
+          - "ansible3" 
+          - "shoxrux"
+        password: "MyStrongPass123"
+        policy: "r"
+
+      - user: "Adxam"
+        bucket:
+          - "shoxrux"
+          - "adxam"
+          - "ansible2"
+        password: "MyStrongPass123"
+        policy: "rw"
+
+  - group_name: qa-team
+    users:
+      - user: "Abbos"
+        bucket: 
+          - "ansible2"
+          - "ansible3"
+          - "abbos"
+          - "adxam"
+          - "shoxrux"
+        password: "MyStrongPass123"
+        policy: "rwd"

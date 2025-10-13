@@ -1,0 +1,37 @@
+- block:
+    - name: Set policy file and actions
+      set_fact:
+        policy_file: "/tmp/{{ bucket_item | lower }}_{{ policy_item | lower }}.json"
+        actions: >-
+          {% if policy_item == 'r' %}
+          ["s3:GetObject"]
+          {% elif policy_item == 'rw' %}
+          ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+          {% elif policy_item == 'rwd' %}
+          ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+          {% else %}
+          ["s3:GetObject"]
+          {% endif %}
+
+    - name: Write policy JSON file
+      copy:
+        dest: "{{ policy_file }}"
+        content: |
+          {
+            "Version": "2012-10-17",
+            "Statement": [ {
+              "Effect": "Allow",
+              "Action": {{ actions }},
+              "Resource": ["arn:aws:s3:::{{ bucket_item }}/*", "arn:aws:s3:::{{ bucket_item }}"]
+            } ]
+          }
+
+    - name: Create policy in MinIO
+      ansible.builtin.shell: >
+        mc admin policy create {{ mc_alias }} {{ (bucket_item + '_' + policy_item) | lower }} {{ policy_file }}
+      ignore_errors: true
+
+    - name: Attach policy to user {{ user.user }}
+      ansible.builtin.shell: >
+        mc admin policy attach {{ mc_alias }} --user {{ user.user }} {{ (bucket_item + '_' + policy_item) | lower }}
+      ignore_errors: true
