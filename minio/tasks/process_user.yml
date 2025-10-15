@@ -1,0 +1,63 @@
+---
+- name: Create service account for user {{ user.user }}
+  vars:
+    USERNAME: "{{ user.user }}"
+    SVCACCT_JSON_FILE: "/tmp/{{ USERNAME }}_svcacct.json"
+  shell: |
+    mc admin user svcacct add "{{ mc_alias }}" "{{ USERNAME }}" > "{{ SVCACCT_JSON_FILE }}"
+    ACCESS_KEY=$(grep 'Access Key:' "{{ SVCACCT_JSON_FILE }}" | cut -d':' -f2- | xargs)
+    SECRET_KEY=$(grep 'Secret Key:' "{{ SVCACCT_JSON_FILE }}" | cut -d':' -f2- | xargs)
+    echo "ACCESS_KEY=$ACCESS_KEY"
+    echo "SECRET_KEY=$SECRET_KEY"
+  register: svcacct_result
+  changed_when: false
+
+- name: Extract service account keys for {{ user.user }}
+  set_fact:
+    access_key: "{{ svcacct_result.stdout | regex_search('ACCESS_KEY=(.*)', '\\1') }}"
+    secret_key: "{{ svcacct_result.stdout | regex_search('SECRET_KEY=(.*)', '\\1') }}"
+
+- name: Save access and secret keys to local file
+  copy:
+    dest: "{{ vault_local_keys_dir }}/{{ user.user }}_keys.txt"
+    content: |
+      User: {{ user.user }}
+      AccessKey: {{ access_key }}
+      SecretKey: {{ secret_key }}
+  when: access_key is defined and secret_key is defined
+
+- name: Encrypt keys with Vault transit engine
+  uri:
+    url: "{{ vault_url }}/v1/transit/encrypt/{{ vault_key }}"
+    method: POST
+    headers:
+      "X-Vault-Token": "{{ vault_vars.vault_token }}"
+    body_format: json
+    body:
+      plaintext: "{{ ('AccessKey=' ~ access_key ~ ';SecretKey=' ~ secret_key) | b64encode }}"
+    validate_certs: false
+  register: vault_encrypt
+  when: access_key is defined and secret_key is defined
+
+# - name: Save encrypted keys to Vault
+#   community.hashi_vault.vault_kv2_write:
+#     url: "{{ vault_url }}"
+#     token: "{{ vault_vars.vault_token }}"
+#     path: "{{ vault_secret_path }}/{{ user.user }}"
+#     data:
+#       ciphertext: "{{ vault_encrypt.json.data.ciphertext }}"
+#     validate_certs: false
+#   when: vault_encrypt is defined
+
+- name: Save access and secret keys 
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ vault_url }}"
+    token: "{{ vault_vars.vault_token }}"
+    path: "{{ vault_secret_path }}/{{ user.user }}"
+    data:
+      access_key: "{{ access_key }}"
+      secret_key: "{{ secret_key }}"
+    validate_certs: false
+  when: access_key is defined and secret_key is defined
+
+

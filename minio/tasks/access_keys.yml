@@ -1,0 +1,8 @@
+---
+- name: Process all user groups
+  vars:
+    MC_ALIAS: "{{ mc_alias }}"
+  include_tasks: process_group.yml
+  loop: "{{ user_groups }}"
+  loop_control:
+    loop_var: group_item

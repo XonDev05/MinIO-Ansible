@@ -1,7 +1,41 @@
 ---
+
 mip: "localhost:9000"
 mc_alias: "minio"
-bucket: "ansible2"
-user: "ansible2"
-password: "MyStrongPass123"
-policy: "rw"
+
+
+vault_url: "https://localhost:8200"
+vault_key: "minio-key"
+vault_secret_path: "secret/minio"
+vault_local_keys_dir: "/root/keys_for_vault"
+
+
+user_groups:
+  - group_name: dev-team
+    users:
+      - user: "Shoxrux"
+        bucket:
+          - "ansible3"
+          - "shoxrux"
+        password: "MyStrongPass123"
+        policy: "r"
+
+      - user: "Adxam"
+        bucket:
+          - "shoxrux"
+          - "adxam"
+          - "ansible2"
+        password: "MyStrongPass123"
+        policy: "rw"
+
+  - group_name: qa-team
+    users:
+      - user: "Abbos"
+        bucket:
+          - "ansible2"
+          - "ansible3"
+          - "abbos"
+          - "adxam"
+          - "shoxrux"
+        password: "MyStrongPass123"
+        policy: "rwd"
