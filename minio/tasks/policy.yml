@@ -1,0 +1,7 @@
+- name: Process policies for user {{ user.user }}
+  vars:
+    user_policies: "{{ (user.policy is string) | ternary([user.policy], user.policy) }}"
+  include_tasks: policy_item.yml
+  loop: "{{ user.bucket }}"
+  loop_control:
+    loop_var: bucket_item

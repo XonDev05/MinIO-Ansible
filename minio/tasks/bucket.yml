@@ -1,0 +1,16 @@
+---
+- name: Check if bucket exists
+  shell: "mc ls {{ mc_alias }}/{{ bucket_item }}"
+  register: bucket_check
+  ignore_errors: true
+
+- name: Create bucket if not exists
+  shell: "mc mb {{ mc_alias }}/{{ bucket_item }}"
+  when: bucket_check.rc != 0
+  ignore_errors: true
+  
+- name: Process policies
+  include_tasks: policy.yml
+  loop: "{{ (user.policy is string) | ternary([user.policy], user.policy) }}"
+  loop_control:
+    loop_var: policy_item

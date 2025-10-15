@@ -1,0 +1,6 @@
+---
+- name: Process users in group {{ group.group_name }}
+  include_tasks: user.yml
+  loop: "{{ group.users }}"
+  loop_control:
+    loop_var: user
