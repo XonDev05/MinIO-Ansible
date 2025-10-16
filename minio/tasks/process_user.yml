@@ -39,16 +39,6 @@
   register: vault_encrypt
   when: access_key is defined and secret_key is defined
 
-# - name: Save encrypted keys to Vault
-#   community.hashi_vault.vault_kv2_write:
-#     url: "{{ vault_url }}"
-#     token: "{{ vault_vars.vault_token }}"
-#     path: "{{ vault_secret_path }}/{{ user.user }}"
-#     data:
-#       ciphertext: "{{ vault_encrypt.json.data.ciphertext }}"
-#     validate_certs: false
-#   when: vault_encrypt is defined
-
 - name: Save access and secret keys 
   community.hashi_vault.vault_kv2_write:
     url: "{{ vault_url }}"
