@@ -21,7 +21,7 @@
   ansible.builtin.shell: "command -v mc"
   register: mc_check
   ignore_errors: true
-  tags: Client
+  tags: client
 
 - name: Download mc client if not exists
   ansible.builtin.get_url:
@@ -29,7 +29,7 @@
     dest: "/usr/local/bin/mc"
     mode: '0755'
   when: mc_check.rc != 0
-  tags: Client
+  tags: client
 
 - name: Add MinIO alias
   ansible.builtin.shell: >
