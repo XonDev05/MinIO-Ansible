@@ -28,6 +28,12 @@ user_groups:
         password: "MyStrongPass123"
         policy: "rw"
 
+      - user: "Adxam"
+        bucket:
+          - "anvar"
+        password: "MyStrongPass123"
+        policy: "r"
+
       - user: "Anvar"
         bucket:
           - "ansible2"
