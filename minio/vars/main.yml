@@ -28,6 +28,14 @@ user_groups:
         password: "MyStrongPass123"
         policy: "rw"
 
+      - user: "Anvar"
+        bucket:
+          - "ansible2"
+          - "ansible3"
+          - "anvar"
+        password: "MyStrongPass123"
+        policy: "rwd"
+
   - group_name: qa-team
     users:
       - user: "Abbos"
