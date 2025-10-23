@@ -70,7 +70,7 @@
       options:
         version: "2"
     validate_certs: false
-  when: "'{{ vault_mount }}/' not in vault_mounts_for_kv.json"
+  when: "vault_mount ~ '/' not in vault_mounts_for_kv.json"
   register: enable_kv_mount
 
 - name: Check whether KV v2 secret path exists
@@ -98,6 +98,19 @@
     - kv_path_check is defined
     - kv_path_check.status == 404
 
+- name: Check if service account already exists for user {{ user.user }}
+  vars:
+    USERNAME: "{{ user.user }}"
+  shell: |
+    mc admin user svcacct ls "{{ mc_alias }}" "{{ USERNAME }}" 2>&1
+  register: existing_svcacct
+  changed_when: false
+  failed_when: false
+
+- name: Parse service account status
+  set_fact:
+    has_svcacct: "{{ 'accessKey' in existing_svcacct.stdout or existing_svcacct.stdout | regex_search('[A-Z0-9]{20}') }}"
+
 - name: Create service account for user {{ user.user }}
   vars:
     USERNAME: "{{ user.user }}"
@@ -109,12 +122,17 @@
     echo "ACCESS_KEY=$ACCESS_KEY"
     echo "SECRET_KEY=$SECRET_KEY"
   register: svcacct_result
-  changed_when: false
+  changed_when: true
+  when: not has_svcacct
 
 - name: Extract service account keys for {{ user.user }}
   set_fact:
-    access_key: "{{ svcacct_result.stdout | regex_search('ACCESS_KEY=(.*)', '\\1') }}"
-    secret_key: "{{ svcacct_result.stdout | regex_search('SECRET_KEY=(.*)', '\\1') }}"
+    access_key: "{{ svcacct_result.stdout | regex_search('ACCESS_KEY=(.+)', '\\1') | first }}"
+    secret_key: "{{ svcacct_result.stdout | regex_search('SECRET_KEY=(.+)', '\\1') | first }}"
+  when: 
+    - not has_svcacct
+    - svcacct_result is defined
+    - svcacct_result.stdout is defined
 
 - name: Save access and secret keys to local file
   copy:
@@ -123,7 +141,10 @@
       User: {{ user.user }}
       AccessKey: {{ access_key }}
       SecretKey: {{ secret_key }}
-  when: access_key is defined and secret_key is defined
+  when: 
+    - not has_svcacct
+    - access_key is defined 
+    - secret_key is defined
 
 - name: Encrypt keys with Vault transit engine
   uri:
@@ -136,7 +157,10 @@
       plaintext: "{{ ('AccessKey=' ~ access_key ~ ';SecretKey=' ~ secret_key) | b64encode }}"
     validate_certs: false
   register: vault_encrypt
-  when: access_key is defined and secret_key is defined
+  when: 
+    - not has_svcacct
+    - access_key is defined 
+    - secret_key is defined
 
 - name: Save access and secret keys 
   community.hashi_vault.vault_kv2_write:
@@ -147,4 +171,12 @@
       access_key: "{{ access_key }}"
       secret_key: "{{ secret_key }}"
     validate_certs: false
-  when: access_key is defined and secret_key is defined
+  when: 
+    - not has_svcacct
+    - access_key is defined 
+    - secret_key is defined
+
+- name: Service account already exists for {{ user.user }}
+  debug:
+    msg: "Service account for user {{ user.user }} already exists. Skipping creation."
+  when: has_svcacct
