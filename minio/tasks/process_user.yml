@@ -118,6 +118,7 @@
 # ==================================================================
 # Create new service account if needed
 # ==================================================================
+
 - name: Create service account for user {{ user.user }}
   vars:
     USERNAME: "{{ user.user }}"
@@ -144,6 +145,7 @@
 # ==================================================================
 # Handle existing service accounts too
 # ==================================================================
+
 - name: Extract existing service account keys for {{ user.user }}
   set_fact:
     access_key: "{{ existing_svcacct.stdout | regex_search('accessKey[=: ]+([A-Z0-9]{20})', '\\1') | default('', true) }}"
@@ -157,7 +159,6 @@
       - "Existing secret_key: {{ secret_key | default('not found') }}"
   when: has_svcacct
 
-
 # ===============================
 # Debug — actual key values
 # ===============================
@@ -169,8 +170,6 @@
       - "secret_key defined: {{ secret_key is defined }}"
       - "access_key value: '{{ access_key | default('NONE') }}'"
       - "secret_key value: '{{ secret_key | default('NONE') }}'"
-
-      
 
 # ==================================================================
 # Save keys locally (only if newly created)
@@ -220,7 +219,6 @@
     - secret_key is defined
     - access_key | length > 0
     - secret_key | length > 0
-
 
 - name: Service account already exists for {{ user.user }}
   debug:
