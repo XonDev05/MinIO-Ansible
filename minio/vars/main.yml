@@ -1,22 +1,26 @@
 ---
-
 mip: "localhost:9000"
 mc_alias: "minio"
-
 
 vault_url: "https://localhost:8200"
 vault_key: "minio-key"
 vault_secret_path: "secret/minio"
 vault_local_keys_dir: "/root/keys_for_vault"
 
-
 user_groups:
   - group_name: dev-team
     users:
       - user: "Shoxrux"
         bucket:
-          - "ansible3"
-          - "shoxrux"
+          - name: "ansible3"
+            versioning: true
+            object_lock: true
+            quota: "9GiB"
+          
+          - name: "jamol"
+            versioning: true
+            object_lock: true
+            quota: "7GiB"
         password: "MyStrongPass123"
         policy: "r"
 
@@ -42,6 +46,7 @@ user_groups:
         password: "MyStrongPass123"
         policy: "rwd"
 
+
   - group_name: qa-team
     users:
       - user: "Abbos"
@@ -53,3 +58,12 @@ user_groups:
           - "shoxrux"
         password: "MyStrongPass123"
         policy: "rwd"
+
+      - user: "Abror"
+        bucket:
+          - name: "abror"
+            versioning: true
+            object_lock: true
+            quota: "10GiB"
+        password: "MyStrongPass123"
+        policy: "r"
