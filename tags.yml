@@ -1,0 +1,10 @@
+tags:
+  - include  # Tag to include vars files
+  - check # Tag to run checks MinIO Client "mc"
+  - set # Tag to set up MinIO Client "mc alias set"
+  - var # Tag to set variables
+  - user # Tag to create users
+  - bucket # Tag to create buckets
+  - policy # Tag to create policies
+  - svacc # Tag to create service accounts
+  - vault # Tag to create vault secrets
