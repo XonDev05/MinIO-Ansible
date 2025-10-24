@@ -8,3 +8,8 @@ tags:
   - policy # Tag to create policies
   - svacc # Tag to create service accounts
   - vault # Tag to create vault secrets
+
+name: Tag list
+    - "include, check, set, var, user, bucket, policy, svacc, vault"
+
+    
