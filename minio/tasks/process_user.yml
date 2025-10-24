@@ -1,4 +1,10 @@
 ---
+- name: Load Vault variables
+  include_vars:
+    file: files/vault_token.yml
+    name: vault_vars
+  tags: vault
+  
 - name: Check if Vault transit engine exists
   uri:
     url: "{{ vault_url }}/v1/sys/mounts"
@@ -7,6 +13,7 @@
       "X-Vault-Token": "{{ vault_vars.vault_token }}"
     validate_certs: false
   register: vault_mounts
+  tags: vault
 
 - name: Enable transit secrets engine if not present
   uri:
@@ -20,6 +27,7 @@
     validate_certs: false
   when: "'transit/' not in vault_mounts.json"
   register: transit_created
+  tags: vault
 
 - name: Check if Vault transit key exists
   uri:
@@ -30,6 +38,7 @@
     validate_certs: false
   register: transit_key_check
   failed_when: false
+  tags: vault
 
 - name: Create Vault transit key if not exists
   uri:
@@ -42,12 +51,14 @@
       type: "aes256-gcm96"
     validate_certs: false
   when: transit_key_check.status == 404
+  tags: vault
 
 - name: Split vault_secret_path into mount and subpath
   set_fact:
     vault_mount: "{{ vault_secret_path.split('/')[0] }}"
     vault_subpath: "{{ vault_secret_path.split('/')[1:] | join('/') }}"
   when: vault_secret_path is defined
+  tags: vault
 
 - name: Get current mounts from Vault
   uri:
@@ -57,6 +68,7 @@
       "X-Vault-Token": "{{ vault_vars.vault_token }}"
     validate_certs: false
   register: vault_mounts_for_kv
+  tags: vault
 
 - name: Enable kv v2 at mount if not present
   uri:
@@ -72,6 +84,7 @@
     validate_certs: false
   when: "vault_mount ~ '/' not in vault_mounts_for_kv.json"
   register: enable_kv_mount
+  tags: vault
 
 - name: Check whether KV v2 secret path exists
   uri:
@@ -83,6 +96,7 @@
     validate_certs: false
   register: kv_path_check
   when: vault_subpath != ""
+  tags: vault
 
 - name: Create KV v2 secret path if not exists
   uri:
@@ -97,6 +111,7 @@
   when:
     - kv_path_check is defined
     - kv_path_check.status == 404
+  tags: vault
 
 # ==================================================================
 # MinIO Service Account Processing
@@ -110,10 +125,12 @@
   register: existing_svcacct
   changed_when: false
   failed_when: false
+  tags: svacc
 
 - name: Parse service account status
   set_fact:
     has_svcacct: "{{ 'accessKey' in existing_svcacct.stdout or existing_svcacct.stdout | regex_search('[A-Z0-9]{20}') }}"
+  tags: svacc
 
 # ==================================================================
 # Create new service account if needed
@@ -132,6 +149,7 @@
   register: svcacct_result
   changed_when: true
   when: not has_svcacct
+  tags: svacc
 
 - name: Extract service account keys for {{ user.user }}
   set_fact:
@@ -141,6 +159,7 @@
     - not has_svcacct
     - svcacct_result is defined
     - svcacct_result.stdout is defined
+  tags: svacc
 
 # ==================================================================
 # Handle existing service accounts too
@@ -151,6 +170,7 @@
     access_key: "{{ existing_svcacct.stdout | regex_search('accessKey[=: ]+([A-Z0-9]{20})', '\\1') | default('', true) }}"
     secret_key: "{{ existing_svcacct.stdout | regex_search('secretKey[=: ]+([A-Za-z0-9+/=]{40,})', '\\1') | default('', true) }}"
   when: has_svcacct
+  tags: svacc
 
 - name: Debug existing access/secret keys
   debug:
@@ -158,6 +178,7 @@
       - "Existing access_key: {{ access_key | default('not found') }}"
       - "Existing secret_key: {{ secret_key | default('not found') }}"
   when: has_svcacct
+  tags: svacc
 
 # ===============================
 # Debug — actual key values
@@ -170,6 +191,7 @@
       - "secret_key defined: {{ secret_key is defined }}"
       - "access_key value: '{{ access_key | default('NONE') }}'"
       - "secret_key value: '{{ secret_key | default('NONE') }}'"
+  tags: svacc
 
 # ==================================================================
 # Save keys locally (only if newly created)
@@ -187,6 +209,7 @@
     - secret_key is defined
     - access_key | length > 0
     - secret_key | length > 0
+  tags: svacc
 
 - name: Encrypt keys with Vault transit engine
   uri:
@@ -204,6 +227,7 @@
     - secret_key is defined
     - access_key | length > 0
     - secret_key | length > 0
+  tags: vault
 
 - name: Save access and secret keys to Vault
   community.hashi_vault.vault_kv2_write:
@@ -219,8 +243,12 @@
     - secret_key is defined
     - access_key | length > 0
     - secret_key | length > 0
+  tags: vault
 
 - name: Service account already exists for {{ user.user }}
   debug:
     msg: "Service account for user {{ user.user }} already exists. Updated keys saved to Vault."
   when: has_svcacct
+  tags: svacc
+
+

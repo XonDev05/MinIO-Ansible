@@ -3,13 +3,16 @@
   shell: "mc admin user info {{ mc_alias }} {{ user.user }}"
   register: user_info
   ignore_errors: true
+  tags: user
 
 - name: Create user if not exists
   shell: "mc admin user add {{ mc_alias }} {{ user.user }} {{ user.password }}"
   when: user_info.rc != 0
+  tags: user
 
 - name: Process buckets
   include_tasks: bucket.yml
   loop: "{{ user.bucket }}"
   loop_control:
     loop_var: bucket_item
+  tags: var

@@ -5,3 +5,4 @@
   loop: "{{ user.bucket }}"
   loop_control:
     loop_var: bucket_item
+  tags: var

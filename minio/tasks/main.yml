@@ -3,46 +3,53 @@
   include_vars:
     file: "{{ role_path }}/files/vault_token.yml"
     name: vault_vars
+    tags: include
     
 - name: Include .env file
   include_vars:
     file: "{{ role_path }}/files/.env"
     name: env_vars
+    tags: include
  
 
 - name: Set access and secret keys
   set_fact:
     access_key: "{{ env_vars.MINIO_ACCESS_KEY }}"
     secret_key: "{{ env_vars.MINIO_SECRET_KEY }}"
+  tags: include
   
 
-# - name: Check if mc client exists
-#   ansible.builtin.shell: "command -v mc"
-#   register: mc_check
-#   ignore_errors: true
+- name: Check if mc client exists
+  ansible.builtin.shell: "command -v mc"
+  register: mc_check
+  ignore_errors: true
+  tags: check
  
 
-# - name: Download mc client if not exists
-#   ansible.builtin.get_url:
-#     url: "https://dl.min.io/client/mc/release/linux-amd64/mc"
-#     dest: "/usr/local/bin/mc"
-#     mode: '0755'
-#   when: mc_check.rc != 0
+- name: Download mc client if not exists
+  ansible.builtin.get_url:
+    url: "https://dl.min.io/client/mc/release/linux-amd64/mc"
+    dest: "/usr/local/bin/mc"
+    mode: '0755'
+  when: mc_check.rc != 0
+  tags: check
 
 
 - name: Add MinIO alias
   ansible.builtin.shell: >
     mc alias set {{ mc_alias }} http://{{ mip }} {{ access_key }} {{ secret_key }}
   ignore_errors: true
+  tags: set
 
 
-# - name: Process user groups
-#   include_tasks: group.yml
-#   loop: "{{ user_groups }}"
-#   loop_control:
-#     loop_var: group
-
+- name: Process user groups
+  include_tasks: group.yml
+  loop: "{{ user_groups }}"
+  loop_control:
+    loop_var: group
+  tags: var
 
 - name: Include access key processing
   include_tasks: access_keys.yml
   tags: vault
+  

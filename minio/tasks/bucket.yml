@@ -3,9 +3,8 @@
   shell: "mc ls {{ mc_alias }}/{{ bucket_item.name }}"
   register: bucket_check
   ignore_errors: true
+  tags: bucket
 
-
-# 1. Oddiy bucket yaratish
 - name: Create normal bucket (no versioning, no object lock)
   shell: "mc mb {{ mc_alias }}/{{ bucket_item.name }}"
   when:
@@ -14,9 +13,8 @@
     - (bucket_item.object_lock is not defined or not bucket_item.object_lock)
   register: create_bucket_normal
   ignore_errors: true
+  tags: bucket
 
-
-# 2. Object Lock bilan bucket yaratish
 - name: Create bucket with Object Lock
   shell: "mc mb --with-lock {{ mc_alias }}/{{ bucket_item.name }}"
   when:
@@ -25,9 +23,8 @@
     - bucket_item.object_lock | bool
   register: create_bucket_lock
   ignore_errors: true
+  tags: bucket
 
-
-# 3. Versioning yoqish (yaratilgan bucketda)
 - name: Enable versioning on bucket
   shell: "mc version enable {{ mc_alias }}/{{ bucket_item.name }}"
   when:
@@ -35,9 +32,8 @@
     - bucket_item.versioning | bool
   register: enable_versioning
   ignore_errors: true
+  tags: bucket
 
-
-# 4. Quota qo‘shish (agar mavjud bo‘lsa)
 - name: Set quota for bucket
   shell: "mc quota set {{ mc_alias }}/{{ bucket_item.name }} --size {{ bucket_item.quota }}"
   when:
@@ -45,11 +41,11 @@
     - bucket_item.quota | length > 0
   register: set_quota
   ignore_errors: true
+  tags: bucket
 
-
-# 5. Process policies (mavjud kod)
 - name: Process policies
   include_tasks: policy.yml
   loop: "{{ (user.policy is string) | ternary([user.policy], user.policy) }}"
   loop_control:
     loop_var: policy_item
+  tags: var

@@ -6,3 +6,4 @@
   loop: "{{ user_groups }}"
   loop_control:
     loop_var: group_item
+  tags: var
