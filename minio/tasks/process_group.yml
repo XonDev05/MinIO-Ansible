@@ -4,3 +4,4 @@
   loop: "{{ group_item.users }}"
   loop_control:
     loop_var: user
+  tags: var

@@ -13,6 +13,7 @@
           {% else %}
           ["s3:GetObject"]
           {% endif %}
+      tags: policy
 
     - name: Write user-specific policy JSON
       copy:
@@ -32,13 +33,16 @@
               ]
             } ]
           }
+      tags: policy
 
     - name: Create policy for {{ user.user }}
       ansible.builtin.shell: >
         mc admin policy create {{ mc_alias }} {{ policy_name }} {{ policy_file }}
       ignore_errors: true
+      tags: policy
 
     - name: Attach {{ policy_name }} to {{ user.user }}
       ansible.builtin.shell: >
         mc admin policy attach {{ mc_alias }} --user {{ user.user }} {{ policy_name }}
       ignore_errors: true
+      tags: policy
