@@ -3,13 +3,11 @@
   include_vars:
     file: "{{ role_path }}/files/vault_token.yml"
     name: vault_vars
-    tags: include
     
 - name: Include .env file
   include_vars:
     file: "{{ role_path }}/files/.env"
     name: env_vars
-    tags: include
  
 
 - name: Set access and secret keys

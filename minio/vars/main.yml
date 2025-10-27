@@ -24,6 +24,15 @@ user_groups:
         password: "MyStrongPass123"
         policy: "r"
 
+      - user: "Nodir"
+        bucket:
+          - name: "nodir"
+            versioning: true
+            object_lock: true
+            quota: "3GiB"
+        password: "MyStrongPass123"
+        policy: "rw"
+
       - user: "Adxam"
         bucket:
           - "shoxrux"

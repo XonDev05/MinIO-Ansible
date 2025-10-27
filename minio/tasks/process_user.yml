@@ -3,7 +3,6 @@
   include_vars:
     file: files/vault_token.yml
     name: vault_vars
-  tags: vault
   
 - name: Check if Vault transit engine exists
   uri:
